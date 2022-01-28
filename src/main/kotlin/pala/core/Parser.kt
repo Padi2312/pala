@@ -2,10 +2,10 @@ package pala.core
 
 import pala.exceptions.ParserException
 
-class Parser constructor(private val tokenList: List<Token>) {
+class Parser constructor(private val lexer: Lexer) {
 
-    private var currentPosition = 0;
-    private var lookAhead = tokenList[currentPosition]
+    private var currentPosition = 0
+    private var lookAhead = lexer.getNextToken()
 
     fun parse(): Node {
         return expr()
@@ -13,7 +13,7 @@ class Parser constructor(private val tokenList: List<Token>) {
 
     private fun expr(): Node {
         if (lookAhead.type == TokenTypes.NUMBER || lookAhead.type == TokenTypes.STARTBRAC) {
-            val term = term(null)
+            val term = term()
             return exprOpt(term)
         } else {
             throw ParserException("Invalid token at position ${this.currentPosition} expected Type<${lookAhead.type.name}>")
@@ -26,7 +26,7 @@ class Parser constructor(private val tokenList: List<Token>) {
                 Utils.getTokenTypeFromArithmeticOp(lookAhead.text)
 
             val value = match(tokenType)
-            val term = term(null)
+            val term = term()
             val rest = exprOpt(node)
             return BinNode(value, rest, term)
         } else if (lookAhead.type == TokenTypes.EOF || lookAhead.type == TokenTypes.ENDBRAC) {
@@ -36,7 +36,7 @@ class Parser constructor(private val tokenList: List<Token>) {
         }
     }
 
-    private fun term(node: Node?): Node {
+    private fun term(): Node {
         if (lookAhead.type == TokenTypes.NUMBER || lookAhead.type == TokenTypes.STARTBRAC) {
             val factor = factor()
             return termOpt(factor)
@@ -82,11 +82,9 @@ class Parser constructor(private val tokenList: List<Token>) {
         if (type != lookAhead.type) {
             throw ParserException("Expected Type<$type> but found Type<${lookAhead.type.name}> at $currentPosition")
         }
-        val value = tokenList[currentPosition].text
-        currentPosition++
-        if (currentPosition < tokenList.size)
-            lookAhead = tokenList[currentPosition]
-        return value
+        val value = lookAhead
+        lookAhead = lexer.getNextToken()
+        return value.text
     }
 
     private fun parserException(tokenTypes: TokenTypes, secondType: TokenTypes? = null) {

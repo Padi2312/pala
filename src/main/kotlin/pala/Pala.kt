@@ -8,9 +8,7 @@ class Pala {
 
     fun execute(expression: String): Int {
         val lexer = Lexer(expression)
-        val tokenList = lexer.lex()
-
-        val parser = Parser(tokenList)
+        val parser = Parser(lexer)
         val ast = parser.parse()
         return Interpreter(ast).interpret()
     }
